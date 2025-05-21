@@ -3,7 +3,7 @@
  * Plugin Name: Konecte Modular - Google Sheets Connector
  * Plugin URI: https://github.com/fvnks/konecte-modular
  * Description: Plugin modular para conectar WordPress con Google Sheets y mostrar datos mediante shortcodes.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: FvNks
  * Author URI: https://github.com/fvnks
  * License: GPL-2.0+
@@ -18,7 +18,7 @@ if (!defined('WPINC')) {
 }
 
 // Definir constantes
-define('KONECTE_MODULAR_VERSION', '1.0.0');
+define('KONECTE_MODULAR_VERSION', '1.0.1');
 define('KONECTE_MODULAR_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('KONECTE_MODULAR_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('KONECTE_MODULAR_PLUGIN_BASENAME', plugin_basename(__FILE__));
