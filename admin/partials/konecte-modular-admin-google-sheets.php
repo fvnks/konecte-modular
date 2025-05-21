@@ -24,24 +24,13 @@
         // Contenido de la pestaña de ayuda
         ?>
         <div class="card">
-            <h2><?php _e('Cómo obtener una API Key de Google', 'konecte-modular'); ?></h2>
+            <h2><?php _e('Cómo configurar una cuenta de servicio de Google', 'konecte-modular'); ?></h2>
+            <p><?php _e('Para acceder a tus hojas de Google Sheets de forma segura, necesitas configurar una cuenta de servicio:', 'konecte-modular'); ?></p>
             <ol>
                 <li><?php _e('Ve a la <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a>', 'konecte-modular'); ?></li>
                 <li><?php _e('Crea un nuevo proyecto o selecciona uno existente', 'konecte-modular'); ?></li>
                 <li><?php _e('Ve a "APIs y Servicios" > "Biblioteca"', 'konecte-modular'); ?></li>
                 <li><?php _e('Busca "Google Sheets API" y actívala', 'konecte-modular'); ?></li>
-                <li><?php _e('Ve a "APIs y Servicios" > "Credenciales"', 'konecte-modular'); ?></li>
-                <li><?php _e('Haz clic en "Crear credenciales" y selecciona "Clave de API"', 'konecte-modular'); ?></li>
-                <li><?php _e('Copia la API Key generada y pégala en la configuración de este plugin', 'konecte-modular'); ?></li>
-            </ol>
-        </div>
-        
-        <div class="card">
-            <h2><?php _e('Cómo configurar una cuenta de servicio de Google', 'konecte-modular'); ?></h2>
-            <p><?php _e('Para un acceso más seguro y con mayores privilegios, se recomienda usar una cuenta de servicio:', 'konecte-modular'); ?></p>
-            <ol>
-                <li><?php _e('Ve a la <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a>', 'konecte-modular'); ?></li>
-                <li><?php _e('Selecciona tu proyecto', 'konecte-modular'); ?></li>
                 <li><?php _e('Ve a "APIs y Servicios" > "Credenciales"', 'konecte-modular'); ?></li>
                 <li><?php _e('Haz clic en "Crear credenciales" y selecciona "Cuenta de servicio"', 'konecte-modular'); ?></li>
                 <li><?php _e('Asigna un nombre, ID y descripción para la cuenta de servicio y haz clic en "Crear"', 'konecte-modular'); ?></li>
@@ -52,7 +41,7 @@
                 <li><?php _e('Se descargará un archivo JSON. Ábrelo con un editor de texto y copia el valor del campo "client_email" en el campo "Email de la cuenta de servicio" del plugin', 'konecte-modular'); ?></li>
                 <li><?php _e('Copia el valor del campo "private_key" en el campo "Clave privada de la cuenta de servicio" del plugin', 'konecte-modular'); ?></li>
             </ol>
-            <p><strong><?php _e('Importante:', 'konecte-modular'); ?></strong> <?php _e('Para permitir que la cuenta de servicio acceda a tu hoja de cálculo, debes compartir la hoja con la dirección de correo de la cuenta de servicio que copiaste en el paso 10, dándole al menos permisos de "Lector".', 'konecte-modular'); ?></p>
+            <p><strong><?php _e('Importante:', 'konecte-modular'); ?></strong> <?php _e('Para permitir que la cuenta de servicio acceda a tu hoja de cálculo, debes compartir la hoja con la dirección de correo de la cuenta de servicio que copiaste en el paso 12, dándole al menos permisos de "Lector".', 'konecte-modular'); ?></p>
         </div>
         
         <div class="card">
@@ -63,24 +52,8 @@
         </div>
         
         <div class="card">
-            <h2><?php _e('Cómo hacer tu hoja pública', 'konecte-modular'); ?></h2>
-            <p><?php _e('Si estás utilizando una API Key (sin cuenta de servicio), debes hacer que tu hoja sea accesible públicamente:', 'konecte-modular'); ?></p>
-            <ol>
-                <li><?php _e('Abre tu hoja de Google', 'konecte-modular'); ?></li>
-                <li><?php _e('Haz clic en "Archivo" > "Compartir" > "Publicar en la web"', 'konecte-modular'); ?></li>
-                <li><?php _e('Selecciona la hoja o el rango de celdas que deseas publicar', 'konecte-modular'); ?></li>
-                <li><?php _e('Haz clic en "Publicar"', 'konecte-modular'); ?></li>
-            </ol>
-            <p><?php _e('Alternativamente, puedes compartir la hoja para que cualquier persona con el enlace pueda verla:', 'konecte-modular'); ?></p>
-            <ol>
-                <li><?php _e('Abre tu hoja de Google', 'konecte-modular'); ?></li>
-                <li><?php _e('Haz clic en "Compartir" en la esquina superior derecha', 'konecte-modular'); ?></li>
-                <li><?php _e('Cambia la configuración a "Cualquier persona con el enlace"', 'konecte-modular'); ?></li>
-                <li><?php _e('Asegúrate de que el permiso sea al menos "Lector"', 'konecte-modular'); ?></li>
-                <li><?php _e('Haz clic en "Listo"', 'konecte-modular'); ?></li>
-            </ol>
-            
-            <p><?php _e('Si estás utilizando una cuenta de servicio, no necesitas hacer pública tu hoja. Solo debes compartirla con el email de la cuenta de servicio:', 'konecte-modular'); ?></p>
+            <h2><?php _e('Compartir tu hoja con la cuenta de servicio', 'konecte-modular'); ?></h2>
+            <p><?php _e('Para que la cuenta de servicio pueda acceder a tu hoja, debes compartirla con ella:', 'konecte-modular'); ?></p>
             <ol>
                 <li><?php _e('Abre tu hoja de Google', 'konecte-modular'); ?></li>
                 <li><?php _e('Haz clic en "Compartir" en la esquina superior derecha', 'konecte-modular'); ?></li>

@@ -22,7 +22,8 @@
         // Validar campos de formulario
         $('.konecte-modular-settings-form').on('submit', function(e) {
             var $sheet_id = $('#konecte_modular_google_sheets_id');
-            var $api_key = $('#konecte_modular_google_sheets_api_key');
+            var $service_account_email = $('#konecte_modular_google_sheets_service_account_email');
+            var $private_key = $('#konecte_modular_google_sheets_private_key');
             
             if ($sheet_id.length && $sheet_id.val() === '') {
                 alert('Por favor, introduce el ID de la hoja de Google.');
@@ -31,9 +32,16 @@
                 return false;
             }
             
-            if ($api_key.length && $api_key.val() === '') {
-                alert('Por favor, introduce la API Key de Google.');
-                $api_key.focus();
+            if ($service_account_email.length && $service_account_email.val() === '') {
+                alert('Por favor, introduce el email de la cuenta de servicio.');
+                $service_account_email.focus();
+                e.preventDefault();
+                return false;
+            }
+            
+            if ($private_key.length && $private_key.val() === '') {
+                alert('Por favor, introduce la clave privada de la cuenta de servicio.');
+                $private_key.focus();
                 e.preventDefault();
                 return false;
             }
