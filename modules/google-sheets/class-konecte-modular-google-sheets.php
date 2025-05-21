@@ -91,13 +91,30 @@ class Konecte_Modular_Google_Sheets {
             'konecte-modular-google-sheets',
             'konecte_modular_google_sheets_section'
         );
+        
+        add_settings_field(
+            'konecte_modular_google_sheets_service_account_email',
+            __('Email de la cuenta de servicio', 'konecte-modular'),
+            array($this, 'google_sheets_service_account_email_callback'),
+            'konecte-modular-google-sheets',
+            'konecte_modular_google_sheets_section'
+        );
+        
+        add_settings_field(
+            'konecte_modular_google_sheets_private_key',
+            __('Clave privada de la cuenta de servicio', 'konecte-modular'),
+            array($this, 'google_sheets_private_key_callback'),
+            'konecte-modular-google-sheets',
+            'konecte_modular_google_sheets_section'
+        );
     }
 
     /**
      * Callback para la sección de Google Sheets.
      */
     public function google_sheets_section_callback() {
-        echo '<p>' . __('Ingrese la información de su hoja de Google y la API Key para conectarse.', 'konecte-modular') . '</p>';
+        echo '<p>' . __('Ingrese la información de su hoja de Google y las credenciales para conectarse.', 'konecte-modular') . '</p>';
+        echo '<p>' . __('Puedes usar API Key para acceso básico o una cuenta de servicio para acceso más seguro y mayores privilegios.', 'konecte-modular') . '</p>';
     }
 
     /**
@@ -121,6 +138,26 @@ class Konecte_Modular_Google_Sheets {
     }
 
     /**
+     * Callback para el campo email de la cuenta de servicio.
+     */
+    public function google_sheets_service_account_email_callback() {
+        $options = get_option('konecte_modular_google_sheets_settings');
+        $service_account_email = isset($options['service_account_email']) ? $options['service_account_email'] : '';
+        echo '<input type="text" id="konecte_modular_google_sheets_service_account_email" name="konecte_modular_google_sheets_settings[service_account_email]" value="' . esc_attr($service_account_email) . '" class="regular-text" />';
+        echo '<p class="description">' . __('Introduzca el email de la cuenta de servicio de Google (ejemplo: nombre@proyecto.iam.gserviceaccount.com).', 'konecte-modular') . '</p>';
+    }
+
+    /**
+     * Callback para el campo clave privada de la cuenta de servicio.
+     */
+    public function google_sheets_private_key_callback() {
+        $options = get_option('konecte_modular_google_sheets_settings');
+        $private_key = isset($options['private_key']) ? $options['private_key'] : '';
+        echo '<textarea id="konecte_modular_google_sheets_private_key" name="konecte_modular_google_sheets_settings[private_key]" rows="5" class="large-text code">' . esc_textarea($private_key) . '</textarea>';
+        echo '<p class="description">' . __('Pegue la clave privada completa de la cuenta de servicio, incluyendo las líneas "-----BEGIN PRIVATE KEY-----" y "-----END PRIVATE KEY-----".', 'konecte-modular') . '</p>';
+    }
+
+    /**
      * Valida las opciones enviadas.
      *
      * @param array $input Las opciones introducidas por el usuario.
@@ -137,6 +174,15 @@ class Konecte_Modular_Google_Sheets {
             $new_input['api_key'] = sanitize_text_field($input['api_key']);
         }
         
+        if (isset($input['service_account_email'])) {
+            $new_input['service_account_email'] = sanitize_text_field($input['service_account_email']);
+        }
+        
+        if (isset($input['private_key'])) {
+            // No usamos sanitize_text_field aquí porque elimina los saltos de línea que son importantes
+            $new_input['private_key'] = trim($input['private_key']);
+        }
+        
         return $new_input;
     }
 
@@ -150,6 +196,8 @@ class Konecte_Modular_Google_Sheets {
         $options = get_option('konecte_modular_google_sheets_settings');
         $sheet_id = isset($options['sheet_id']) ? $options['sheet_id'] : '';
         $api_key = isset($options['api_key']) ? $options['api_key'] : '';
+        $service_account_email = isset($options['service_account_email']) ? $options['service_account_email'] : '';
+        $private_key = isset($options['private_key']) ? $options['private_key'] : '';
         
         $response = array(
             'success' => false,
@@ -157,21 +205,22 @@ class Konecte_Modular_Google_Sheets {
             'status' => 'error'
         );
         
-        // Verificar si se han configurado el ID de la hoja y la API Key
+        // Verificar si se ha configurado el ID de la hoja
         if (empty($sheet_id)) {
             $response['message'] = __('Error: No se ha configurado el ID de la hoja de Google.', 'konecte-modular');
             wp_send_json($response);
             wp_die();
         }
         
-        if (empty($api_key)) {
-            $response['message'] = __('Error: No se ha configurado la API Key de Google.', 'konecte-modular');
+        // Verificar si se han configurado al menos uno de los métodos de autenticación
+        if (empty($api_key) && (empty($service_account_email) || empty($private_key))) {
+            $response['message'] = __('Error: No se ha configurado ningún método de autenticación. Introduce una API Key o las credenciales de la cuenta de servicio.', 'konecte-modular');
             wp_send_json($response);
             wp_die();
         }
         
         // Intentar obtener datos de la hoja para verificar la conexión
-        $result = $this->check_connection($sheet_id, $api_key);
+        $result = $this->check_connection($sheet_id, $api_key, $service_account_email, $private_key);
         
         if (is_wp_error($result)) {
             $response['message'] = $result->get_error_message();
@@ -195,17 +244,29 @@ class Konecte_Modular_Google_Sheets {
      *
      * @param string $sheet_id ID de la hoja de Google.
      * @param string $api_key API Key de Google.
+     * @param string $service_account_email Email de la cuenta de servicio.
+     * @param string $private_key Clave privada de la cuenta de servicio.
      * @return array|WP_Error Los datos de la hoja o un objeto de error.
      */
-    private function check_connection($sheet_id, $api_key) {
-        // Construir la URL de la API para obtener solo los primeros datos
-        $url = sprintf(
-            'https://sheets.googleapis.com/v4/spreadsheets/%s/values/A1:C5?key=%s',
-            urlencode($sheet_id),
-            urlencode($api_key)
-        );
+    private function check_connection($sheet_id, $api_key, $service_account_email = '', $private_key = '') {
+        // Determinar si se usa autenticación con cuenta de servicio o API Key
+        $use_service_account = !empty($service_account_email) && !empty($private_key);
         
-        // Realizar la solicitud a la API
+        // Construir la URL de la API para obtener solo los primeros datos
+        if ($use_service_account) {
+            $url = sprintf(
+                'https://sheets.googleapis.com/v4/spreadsheets/%s/values/A1:C5',
+                urlencode($sheet_id)
+            );
+        } else {
+            $url = sprintf(
+                'https://sheets.googleapis.com/v4/spreadsheets/%s/values/A1:C5?key=%s',
+                urlencode($sheet_id),
+                urlencode($api_key)
+            );
+        }
+        
+        // Configurar argumentos de la solicitud
         $args = array(
             'timeout'     => 15,
             'sslverify'   => true,
@@ -215,6 +276,18 @@ class Konecte_Modular_Google_Sheets {
             ),
         );
         
+        // Si se usa cuenta de servicio, añadir el token de autorización
+        if ($use_service_account) {
+            $token = $this->get_access_token($service_account_email, $private_key);
+            
+            if (is_wp_error($token)) {
+                return $token;
+            }
+            
+            $args['headers']['Authorization'] = 'Bearer ' . $token;
+        }
+        
+        // Realizar la solicitud a la API
         $response = wp_remote_get($url, $args);
         
         // Verificar si hay errores en la respuesta
@@ -258,6 +331,85 @@ class Konecte_Modular_Google_Sheets {
         }
         
         return $data;
+    }
+    
+    /**
+     * Obtiene un token de acceso para la API de Google usando la cuenta de servicio.
+     *
+     * @param string $service_account_email Email de la cuenta de servicio.
+     * @param string $private_key Clave privada de la cuenta de servicio.
+     * @return string|WP_Error Token de acceso o un objeto de error.
+     */
+    private function get_access_token($service_account_email, $private_key) {
+        // Verificar si ya hay un token válido en caché
+        $token_data = get_transient('konecte_modular_google_token');
+        if ($token_data) {
+            return $token_data;
+        }
+        
+        // Crear el JWT (JSON Web Token)
+        $header = json_encode([
+            'alg' => 'RS256',
+            'typ' => 'JWT'
+        ]);
+        
+        // Tiempo actual y tiempo de expiración (1 hora)
+        $now = time();
+        $expiry = $now + 3600;
+        
+        $claim = json_encode([
+            'iss' => $service_account_email,
+            'scope' => 'https://www.googleapis.com/auth/spreadsheets.readonly',
+            'aud' => 'https://oauth2.googleapis.com/token',
+            'exp' => $expiry,
+            'iat' => $now
+        ]);
+        
+        // Codificar header y claim en base64url
+        $base64_header = rtrim(strtr(base64_encode($header), '+/', '-_'), '=');
+        $base64_claim = rtrim(strtr(base64_encode($claim), '+/', '-_'), '=');
+        
+        // Crear la firma
+        $private_key = str_replace(["-----BEGIN PRIVATE KEY-----\n", "\n-----END PRIVATE KEY-----"], "", $private_key);
+        $private_key = str_replace(["\r", "\n"], '', $private_key);
+        $private_key = "-----BEGIN PRIVATE KEY-----\n" . wordwrap($private_key, 64, "\n", true) . "\n-----END PRIVATE KEY-----";
+        
+        $to_sign = $base64_header . '.' . $base64_claim;
+        $binary_signature = '';
+        
+        // Firmar el token
+        if (!openssl_sign($to_sign, $binary_signature, $private_key, OPENSSL_ALGO_SHA256)) {
+            return new WP_Error('jwt_signing_error', __('Error al firmar el token JWT con la clave privada proporcionada.', 'konecte-modular'));
+        }
+        
+        $base64_signature = rtrim(strtr(base64_encode($binary_signature), '+/', '-_'), '=');
+        
+        // Construir el JWT completo
+        $jwt = $base64_header . '.' . $base64_claim . '.' . $base64_signature;
+        
+        // Solicitar el token de acceso
+        $response = wp_remote_post('https://oauth2.googleapis.com/token', [
+            'body' => [
+                'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+                'assertion' => $jwt
+            ]
+        ]);
+        
+        if (is_wp_error($response)) {
+            return $response;
+        }
+        
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+        
+        if (!isset($body['access_token'])) {
+            $error_msg = isset($body['error_description']) ? $body['error_description'] : __('Error desconocido al obtener el token de acceso', 'konecte-modular');
+            return new WP_Error('token_error', $error_msg);
+        }
+        
+        // Guardar el token en caché (expires_in segundos menos 5 minutos para seguridad)
+        set_transient('konecte_modular_google_token', $body['access_token'], $body['expires_in'] - 300);
+        
+        return $body['access_token'];
     }
 
     /**
@@ -417,39 +569,79 @@ class Konecte_Modular_Google_Sheets {
     private function get_sheet_data($sheet_id, $range, $sheet_index) {
         $options = get_option('konecte_modular_google_sheets_settings');
         $api_key = isset($options['api_key']) ? $options['api_key'] : '';
+        $service_account_email = isset($options['service_account_email']) ? $options['service_account_email'] : '';
+        $private_key = isset($options['private_key']) ? $options['private_key'] : '';
         
-        if (empty($api_key)) {
-            return new WP_Error('no_api_key', __('No se ha configurado la API Key de Google.', 'konecte-modular'));
+        // Determinar método de autenticación a usar
+        $use_service_account = !empty($service_account_email) && !empty($private_key);
+        
+        if (empty($api_key) && !$use_service_account) {
+            return new WP_Error('no_auth_method', __('No se ha configurado ningún método de autenticación para Google Sheets.', 'konecte-modular'));
         }
         
         // Construir la URL de la API
-        $url = sprintf(
-            'https://sheets.googleapis.com/v4/spreadsheets/%s/values/%s!%s?key=%s',
-            $sheet_id,
-            urlencode($sheet_index),
-            urlencode($range),
-            $api_key
+        if ($use_service_account) {
+            $url = sprintf(
+                'https://sheets.googleapis.com/v4/spreadsheets/%s/values/%s!%s',
+                urlencode($sheet_id),
+                urlencode($sheet_index),
+                urlencode($range)
+            );
+        } else {
+            $url = sprintf(
+                'https://sheets.googleapis.com/v4/spreadsheets/%s/values/%s!%s?key=%s',
+                urlencode($sheet_id),
+                urlencode($sheet_index),
+                urlencode($range),
+                urlencode($api_key)
+            );
+        }
+        
+        // Configurar argumentos de la solicitud
+        $args = array(
+            'timeout'     => 15,
+            'sslverify'   => true,
+            'headers'     => array(
+                'Accept'       => 'application/json',
+                'Content-Type' => 'application/json',
+            ),
         );
         
+        // Si se usa cuenta de servicio, añadir el token de autorización
+        if ($use_service_account) {
+            $token = $this->get_access_token($service_account_email, $private_key);
+            
+            if (is_wp_error($token)) {
+                return $token;
+            }
+            
+            $args['headers']['Authorization'] = 'Bearer ' . $token;
+        }
+        
         // Realizar la solicitud a la API
-        $response = wp_remote_get($url);
+        $response = wp_remote_get($url, $args);
         
         // Verificar si hay errores en la respuesta
         if (is_wp_error($response)) {
+            error_log('Konecte Modular - Error en solicitud a Google Sheets: ' . $response->get_error_message());
             return $response;
         }
         
-        // Obtener el código de respuesta
+        // Obtener el código de respuesta y cuerpo
         $response_code = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        
         if ($response_code !== 200) {
+            $error_data = json_decode($body, true);
+            $error_message = isset($error_data['error']['message']) ? $error_data['error']['message'] : __('Error desconocido', 'konecte-modular');
+            
             return new WP_Error(
-                'api_error',
-                sprintf(__('Error al obtener datos de Google Sheets. Código: %s', 'konecte-modular'), $response_code)
+                'api_error_' . $response_code,
+                sprintf(__('Error al obtener datos de Google Sheets (Código %s): %s', 'konecte-modular'), $response_code, $error_message)
             );
         }
         
         // Decodificar la respuesta JSON
-        $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
         
         if (empty($data) || !isset($data['values'])) {
