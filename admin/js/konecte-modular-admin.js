@@ -66,6 +66,46 @@
                 });
             }, 2000);
         });
+        
+        // Verificar conexión con Google Sheets
+        $('#check-connection-btn').on('click', function() {
+            var $button = $(this);
+            var $spinner = $('#connection-spinner');
+            var $message = $('#connection-status-message');
+            
+            // Deshabilitar el botón y mostrar spinner
+            $button.prop('disabled', true);
+            $spinner.css('visibility', 'visible');
+            $message.html('').removeClass('connection-status-success connection-status-error');
+            
+            // Realizar la solicitud AJAX
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'konecte_check_sheets_connection',
+                    nonce: konecte_modular_admin.nonce
+                },
+                success: function(response) {
+                    // Mostrar mensaje de resultado
+                    $message.html(response.message);
+                    
+                    if (response.status === 'success') {
+                        $message.addClass('connection-status-success');
+                    } else {
+                        $message.addClass('connection-status-error');
+                    }
+                },
+                error: function() {
+                    $message.html('Error de comunicación con el servidor.').addClass('connection-status-error');
+                },
+                complete: function() {
+                    // Habilitar el botón y ocultar spinner
+                    $button.prop('disabled', false);
+                    $spinner.css('visibility', 'hidden');
+                }
+            });
+        });
     });
 
 })(jQuery); 

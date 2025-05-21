@@ -51,6 +51,9 @@ class Konecte_Modular_Google_Sheets {
         
         // Registrar acciones de administración
         $this->loader->add_action('admin_init', $this, 'register_settings');
+        
+        // Registrar acción AJAX para verificar la conexión
+        $this->loader->add_action('wp_ajax_konecte_check_sheets_connection', $this, 'ajax_check_connection');
     }
 
     /**
@@ -132,6 +135,101 @@ class Konecte_Modular_Google_Sheets {
         }
         
         return $new_input;
+    }
+
+    /**
+     * Maneja la solicitud AJAX para verificar la conexión con Google Sheets.
+     */
+    public function ajax_check_connection() {
+        // Verificar nonce para seguridad
+        check_ajax_referer('konecte_sheets_connection_nonce', 'nonce');
+        
+        $options = get_option('konecte_modular_google_sheets_settings');
+        $sheet_id = isset($options['sheet_id']) ? $options['sheet_id'] : '';
+        $api_key = isset($options['api_key']) ? $options['api_key'] : '';
+        
+        $response = array(
+            'success' => false,
+            'message' => '',
+            'status' => ''
+        );
+        
+        // Verificar si se han configurado el ID de la hoja y la API Key
+        if (empty($sheet_id)) {
+            $response['message'] = __('Error: No se ha configurado el ID de la hoja de Google.', 'konecte-modular');
+            $response['status'] = 'error';
+            wp_send_json($response);
+            wp_die();
+        }
+        
+        if (empty($api_key)) {
+            $response['message'] = __('Error: No se ha configurado la API Key de Google.', 'konecte-modular');
+            $response['status'] = 'error';
+            wp_send_json($response);
+            wp_die();
+        }
+        
+        // Intentar obtener datos de la hoja para verificar la conexión
+        $result = $this->check_connection($sheet_id, $api_key);
+        
+        if (is_wp_error($result)) {
+            $response['message'] = $result->get_error_message();
+            $response['status'] = 'error';
+        } else {
+            $response['success'] = true;
+            $response['message'] = sprintf(
+                __('Conexión exitosa. Se detectaron %d columnas y %d filas en la hoja.', 'konecte-modular'),
+                count($result['values'][0]),
+                count($result['values'])
+            );
+            $response['status'] = 'success';
+        }
+        
+        wp_send_json($response);
+        wp_die();
+    }
+    
+    /**
+     * Verifica la conexión con Google Sheets.
+     *
+     * @param string $sheet_id ID de la hoja de Google.
+     * @param string $api_key API Key de Google.
+     * @return array|WP_Error Los datos de la hoja o un objeto de error.
+     */
+    private function check_connection($sheet_id, $api_key) {
+        // Construir la URL de la API para obtener solo los primeros datos
+        $url = sprintf(
+            'https://sheets.googleapis.com/v4/spreadsheets/%s/values/A1:B2?key=%s',
+            $sheet_id,
+            $api_key
+        );
+        
+        // Realizar la solicitud a la API
+        $response = wp_remote_get($url);
+        
+        // Verificar si hay errores en la respuesta
+        if (is_wp_error($response)) {
+            return $response;
+        }
+        
+        // Obtener el código de respuesta
+        $response_code = wp_remote_retrieve_response_code($response);
+        if ($response_code !== 200) {
+            return new WP_Error(
+                'api_error',
+                sprintf(__('Error al conectar con Google Sheets. Código: %s', 'konecte-modular'), $response_code)
+            );
+        }
+        
+        // Decodificar la respuesta JSON
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+        
+        if (empty($data) || !isset($data['values'])) {
+            return new WP_Error('no_data', __('No se pudieron obtener datos de la hoja de Google.', 'konecte-modular'));
+        }
+        
+        return $data;
     }
 
     /**

@@ -74,6 +74,17 @@
         </form>
         
         <div class="card">
+            <h2><?php _e('Estado de la conexión', 'konecte-modular'); ?></h2>
+            <p><?php _e('Verifica si tu hoja de Google Sheets está correctamente configurada y accesible.', 'konecte-modular'); ?></p>
+            
+            <div class="connection-status-container">
+                <button type="button" id="check-connection-btn" class="button button-primary"><?php _e('Verificar conexión', 'konecte-modular'); ?></button>
+                <span class="spinner" id="connection-spinner" style="float:none; visibility:hidden; margin-left:10px;"></span>
+                <div id="connection-status-message" class="connection-status" style="margin-top:10px;"></div>
+            </div>
+        </div>
+        
+        <div class="card">
             <h2><?php _e('Ejemplo de Uso', 'konecte-modular'); ?></h2>
             <p><?php _e('Una vez configurada la API Key y el ID de la hoja, puedes usar estos shortcodes:', 'konecte-modular'); ?></p>
             <p><code>[google_sheets]</code> - <?php _e('Muestra la hoja completa', 'konecte-modular'); ?></p>
