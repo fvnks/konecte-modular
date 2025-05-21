@@ -43,6 +43,18 @@
             </ol>
             <p><strong><?php _e('Nota importante:', 'konecte-modular'); ?></strong> <?php _e('Guarda este token en un lugar seguro. No podrás verlo de nuevo una vez que salgas de la página.', 'konecte-modular'); ?></p>
         </div>
+
+        <div class="card">
+            <h2><?php _e('Configuración del intervalo de actualización', 'konecte-modular'); ?></h2>
+            <p><?php _e('Puedes configurar cada cuántos minutos el plugin verificará si hay actualizaciones disponibles en GitHub.', 'konecte-modular'); ?></p>
+            <p><?php _e('Valores recomendados:', 'konecte-modular'); ?></p>
+            <ul>
+                <li><?php _e('60 minutos (1 hora): Para entornos de desarrollo donde necesitas actualizaciones frecuentes.', 'konecte-modular'); ?></li>
+                <li><?php _e('720 minutos (12 horas): Para sitios de prueba o staging.', 'konecte-modular'); ?></li>
+                <li><?php _e('1440 minutos (24 horas): Para sitios en producción.', 'konecte-modular'); ?></li>
+            </ul>
+            <p><?php _e('No se recomienda usar intervalos muy cortos (menos de 15 minutos) en sitios de producción, ya que podría afectar el rendimiento.', 'konecte-modular'); ?></p>
+        </div>
         <?php
     } else {
         // Contenido de la pestaña de configuración
@@ -61,15 +73,25 @@
             <?php
             // Comprobar si hay una actualización disponible
             $last_check = get_option('konecte_modular_last_update_check');
+            $options = get_option('konecte_modular_updater_settings');
+            $check_interval = isset($options['check_interval']) ? (int) $options['check_interval'] : 60;
+            
             if ($last_check) {
                 $date_format = get_option('date_format');
                 $time_format = get_option('time_format');
                 $formatted_date = date_i18n($date_format . ' ' . $time_format, $last_check);
                 
                 echo '<p>' . sprintf(__('Última comprobación de actualizaciones: %s', 'konecte-modular'), $formatted_date) . '</p>';
+                
+                // Calcular próxima comprobación
+                $next_check = $last_check + ($check_interval * MINUTE_IN_SECONDS);
+                $formatted_next_date = date_i18n($date_format . ' ' . $time_format, $next_check);
+                
+                echo '<p>' . sprintf(__('Próxima comprobación programada: %s', 'konecte-modular'), $formatted_next_date) . '</p>';
+                echo '<p>' . sprintf(__('Intervalo de comprobación actual: %d minutos', 'konecte-modular'), $check_interval) . '</p>';
             }
             ?>
-            <p><a href="<?php echo admin_url('update-core.php'); ?>" class="button"><?php _e('Buscar Actualizaciones', 'konecte-modular'); ?></a></p>
+            <p><a href="<?php echo admin_url('update-core.php'); ?>" class="button"><?php _e('Buscar Actualizaciones Ahora', 'konecte-modular'); ?></a></p>
         </div>
         <?php
     }

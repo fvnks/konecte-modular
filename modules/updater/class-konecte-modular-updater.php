@@ -97,7 +97,7 @@ class Konecte_Modular_Updater {
 
         add_settings_field(
             'konecte_modular_updater_check_interval',
-            __('Intervalo de Comprobación (horas)', 'konecte-modular'),
+            __('Intervalo de Comprobación (minutos)', 'konecte-modular'),
             array($this, 'updater_check_interval_callback'),
             'konecte-modular-settings',
             'konecte_modular_updater_section'
@@ -146,9 +146,9 @@ class Konecte_Modular_Updater {
      */
     public function updater_check_interval_callback() {
         $options = get_option('konecte_modular_updater_settings');
-        $check_interval = isset($options['check_interval']) ? $options['check_interval'] : 24;
-        echo '<input type="number" id="konecte_modular_updater_check_interval" name="konecte_modular_updater_settings[check_interval]" value="' . esc_attr($check_interval) . '" class="small-text" min="1" max="168" />';
-        echo '<p class="description">' . __('Cada cuántas horas se debe comprobar si hay actualizaciones (1-168).', 'konecte-modular') . '</p>';
+        $check_interval = isset($options['check_interval']) ? $options['check_interval'] : 60;
+        echo '<input type="number" id="konecte_modular_updater_check_interval" name="konecte_modular_updater_settings[check_interval]" value="' . esc_attr($check_interval) . '" class="small-text" min="5" max="1440" step="5" />';
+        echo '<p class="description">' . __('Cada cuántos minutos se debe comprobar si hay actualizaciones (5-1440). Valores recomendados: 60 (1 hora), 720 (12 horas), 1440 (24 horas).', 'konecte-modular') . '</p>';
     }
 
     /**
@@ -174,10 +174,10 @@ class Konecte_Modular_Updater {
         
         if (isset($input['check_interval'])) {
             $new_input['check_interval'] = absint($input['check_interval']);
-            if ($new_input['check_interval'] < 1) {
-                $new_input['check_interval'] = 1;
-            } elseif ($new_input['check_interval'] > 168) {
-                $new_input['check_interval'] = 168;
+            if ($new_input['check_interval'] < 5) {
+                $new_input['check_interval'] = 5;
+            } elseif ($new_input['check_interval'] > 1440) {
+                $new_input['check_interval'] = 1440;
             }
         }
         
@@ -198,8 +198,8 @@ class Konecte_Modular_Updater {
         // Comprobar si ya se ha verificado recientemente
         $last_check = get_option('konecte_modular_last_update_check');
         $options = get_option('konecte_modular_updater_settings');
-        $check_interval = isset($options['check_interval']) ? (int) $options['check_interval'] : 24;
-        $check_interval_seconds = $check_interval * HOUR_IN_SECONDS;
+        $check_interval = isset($options['check_interval']) ? (int) $options['check_interval'] : 60;
+        $check_interval_seconds = $check_interval * MINUTE_IN_SECONDS;
         
         if ($last_check && (time() - $last_check) < $check_interval_seconds) {
             return $transient;
