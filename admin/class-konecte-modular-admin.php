@@ -46,12 +46,16 @@ class Konecte_Modular_Admin {
         
         // Pasar variables a JavaScript
         wp_localize_script($this->plugin_name, 'konecte_modular_admin', array(
-            'nonce' => wp_create_nonce('konecte_sheets_connection_nonce'),
+            'nonce' => wp_create_nonce('konecte_admin_nonce'),
+            'sheets_nonce' => wp_create_nonce('konecte_sheets_connection_nonce'),
             'preview_nonce' => wp_create_nonce('konecte_sheets_preview_nonce'),
             'checking_connection' => __('Verificando conexión...', 'konecte-modular'),
             'connection_success' => __('Conexión exitosa', 'konecte-modular'),
             'connection_error' => __('Error de conexión', 'konecte-modular'),
-            'generating_preview' => __('Generando previsualización...', 'konecte-modular')
+            'generating_preview' => __('Generando previsualización...', 'konecte-modular'),
+            'checking_update_message' => __('Verificando actualizaciones...', 'konecte-modular'),
+            'update_success_message' => __('¡Verificación completada!', 'konecte-modular'),
+            'update_error_message' => __('Error al verificar actualizaciones. Inténtalo de nuevo.', 'konecte-modular')
         ));
     }
 

@@ -91,7 +91,18 @@
                 echo '<p>' . sprintf(__('Intervalo de comprobación actual: %d minutos', 'konecte-modular'), $check_interval) . '</p>';
             }
             ?>
-            <p><a href="<?php echo admin_url('update-core.php'); ?>" class="button"><?php _e('Buscar Actualizaciones Ahora', 'konecte-modular'); ?></a></p>
+            <p>
+                <a href="<?php echo esc_url(wp_nonce_url(add_query_arg(array('force-check' => 1), admin_url('update-core.php')), 'upgrade-core')); ?>" class="button"><?php _e('Buscar Actualizaciones en WordPress', 'konecte-modular'); ?></a>
+                <a href="<?php echo esc_url(wp_nonce_url(add_query_arg(array('konecte-force-check' => 1), admin_url('admin.php?page=konecte-modular-settings')), 'konecte-force-check')); ?>" class="button button-primary"><?php _e('Forzar Verificación en GitHub', 'konecte-modular'); ?></a>
+            </p>
+        </div>
+        
+        <div class="update-check-status">
+            <button id="check-update-btn" class="button button-secondary">
+                <?php _e('Verificar Estado de Actualizaciones', 'konecte-modular'); ?>
+            </button>
+            <span id="update-spinner" class="spinner"></span>
+            <div id="update-status-message" style="display:none;" class="notice inline"></div>
         </div>
         <?php
     }

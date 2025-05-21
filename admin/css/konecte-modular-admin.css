@@ -296,4 +296,138 @@
         margin-top: 10px;
         margin-left: 0 !important;
     }
+}
+
+/* Estilos para la parte de administración del plugin. */
+
+/* Estilos generales */
+.konecte-admin-wrapper {
+    margin: 20px 0;
+}
+
+.konecte-admin-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.konecte-admin-header {
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+}
+
+.konecte-admin-content {
+    margin-bottom: 15px;
+}
+
+/* Formularios */
+.konecte-admin-form-row {
+    margin-bottom: 15px;
+}
+
+.konecte-admin-form-row label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.konecte-admin-form-row input[type="text"],
+.konecte-admin-form-row input[type="password"],
+.konecte-admin-form-row textarea {
+    width: 100%;
+    max-width: 400px;
+}
+
+.konecte-admin-form-row .description {
+    color: #666;
+    font-style: italic;
+    margin-top: 5px;
+}
+
+/* Mensajes de estado */
+.connection-status-wrapper,
+.update-status-wrapper {
+    margin-top: 15px;
+}
+
+#connection-status-message,
+#update-status-message {
+    padding: 10px;
+    border-radius: 3px;
+    display: block;
+    margin-top: 10px;
+}
+
+.notice-info {
+    background-color: #f0f6fc;
+    border-left: 4px solid #72aee6;
+}
+
+.notice-success {
+    background-color: #ecf7ed;
+    border-left: 4px solid #46b450;
+}
+
+.notice-error {
+    background-color: #fcf0f1;
+    border-left: 4px solid #d63638;
+}
+
+/* Spinner */
+.spinner {
+    float: none;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+/* Card */
+.card {
+    position: relative;
+    margin-top: 20px;
+    padding: 0.7em 2em 1em;
+    min-width: 255px;
+    max-width: 1200px;
+    border: 1px solid #c3c4c7;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    background: #fff;
+    box-sizing: border-box;
+}
+
+.card h2 {
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+}
+
+.update-check-status {
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+.update-check-status .button {
+    vertical-align: middle;
+}
+
+/* Google Sheets Preview */
+.sheets-preview-table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 15px;
+}
+
+.sheets-preview-table th,
+.sheets-preview-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.sheets-preview-table th {
+    background-color: #f2f2f2;
+}
+
+.sheets-preview-table tr:nth-child(even) {
+    background-color: #f9f9f9;
 } 

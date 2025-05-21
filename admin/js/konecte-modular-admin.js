@@ -67,17 +67,14 @@
             }, 2000);
         });
         
-        // Verificar conexión con Google Sheets
-        $('#check-connection-btn').on('click', function() {
-            var $button = $(this);
-            var $spinner = $('#connection-spinner');
-            var $message = $('#connection-status-message');
+        // Evento para el botón de verificación de conexión
+        $('#check-connection-btn').on('click', function(e) {
+            e.preventDefault();
             
-            // Deshabilitar el botón y mostrar spinner
-            $button.prop('disabled', true);
-            $spinner.css('visibility', 'visible');
-            $message.html('').removeClass('connection-status-success connection-status-error');
-            $message.html(konecte_modular_admin.checking_connection);
+            // Mostrar spinner y desactivar botón
+            $('#connection-spinner').show();
+            $(this).prop('disabled', true);
+            $('#connection-status-message').html(konecte_modular_admin.checking_connection).removeClass('notice-success notice-error').addClass('notice-info');
             
             // Realizar la solicitud AJAX
             $.ajax({
@@ -85,34 +82,57 @@
                 type: 'POST',
                 data: {
                     action: 'konecte_check_sheets_connection',
+                    nonce: konecte_modular_admin.sheets_nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#connection-status-message').html(response.data.message).removeClass('notice-info notice-error').addClass('notice-success');
+                    } else {
+                        $('#connection-status-message').html(response.data.message).removeClass('notice-info notice-success').addClass('notice-error');
+                    }
+                },
+                error: function() {
+                    $('#connection-status-message').html(konecte_modular_admin.connection_error).removeClass('notice-info notice-success').addClass('notice-error');
+                },
+                complete: function() {
+                    // Ocultar spinner y habilitar botón
+                    $('#connection-spinner').hide();
+                    $('#check-connection-btn').prop('disabled', false);
+                }
+            });
+        });
+        
+        // Evento para el botón de verificación de actualizaciones
+        $('#check-update-btn').on('click', function(e) {
+            e.preventDefault();
+            
+            // Mostrar spinner y desactivar botón
+            $('#update-spinner').show();
+            $(this).prop('disabled', true);
+            $('#update-status-message').show().html(konecte_modular_admin.checking_update_message).removeClass('notice-success notice-error').addClass('notice-info');
+            
+            // Realizar la solicitud AJAX
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'konecte_force_update_check',
                     nonce: konecte_modular_admin.nonce
                 },
                 success: function(response) {
-                    // Limpiar mensaje anterior
-                    $message.html('');
-                    
-                    // Mostrar mensaje de resultado
-                    if (response && typeof response === 'object') {
-                        $message.html(response.message);
-                        
-                        if (response.success === true || response.status === 'success') {
-                            $message.addClass('connection-status-success');
-                        } else {
-                            $message.addClass('connection-status-error');
-                        }
+                    if (response.success) {
+                        $('#update-status-message').html(response.data.message).removeClass('notice-info notice-error').addClass('notice-success');
                     } else {
-                        // Fallback para respuestas no válidas
-                        $message.html('Error: Respuesta no válida del servidor').addClass('connection-status-error');
+                        $('#update-status-message').html(response.data.message).removeClass('notice-info notice-success').addClass('notice-error');
                     }
                 },
-                error: function(xhr, status, error) {
-                    $message.html('Error de comunicación con el servidor: ' + error).addClass('connection-status-error');
-                    console.error('Error AJAX:', xhr, status, error);
+                error: function() {
+                    $('#update-status-message').html(konecte_modular_admin.update_error_message).removeClass('notice-info notice-success').addClass('notice-error');
                 },
                 complete: function() {
-                    // Habilitar el botón y ocultar spinner
-                    $button.prop('disabled', false);
-                    $spinner.css('visibility', 'hidden');
+                    // Ocultar spinner y habilitar botón
+                    $('#update-spinner').hide();
+                    $('#check-update-btn').prop('disabled', false);
                 }
             });
         });
