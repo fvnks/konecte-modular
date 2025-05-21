@@ -106,6 +106,120 @@
                 }
             });
         });
+        
+        // Previsualización de shortcodes
+        if ($('#preview-shortcode-type').length) {
+            // Manejar cambio de tipo de shortcode
+            $('#preview-shortcode-type').on('change', function() {
+                var type = $(this).val();
+                
+                if (type === 'google_sheets_column') {
+                    $('#column-options').slideDown();
+                    updatePreviewShortcode();
+                } else {
+                    $('#column-options').slideUp();
+                    $('#preview-shortcode-text').text('[google_sheets]');
+                }
+            });
+            
+            // Actualizar el texto del shortcode cuando cambien las opciones
+            $('#preview-column, #preview-header, #preview-list').on('change', function() {
+                updatePreviewShortcode();
+            });
+            
+            // Función para actualizar el texto del shortcode
+            function updatePreviewShortcode() {
+                var type = $('#preview-shortcode-type').val();
+                
+                if (type === 'google_sheets_column') {
+                    var column = $('#preview-column').val();
+                    var header = $('#preview-header').prop('checked') ? 'yes' : 'no';
+                    var list = $('#preview-list').prop('checked') ? 'yes' : 'no';
+                    
+                    var shortcode = '[google_sheets_column column="' + column + '"';
+                    
+                    if (header !== 'yes') {
+                        shortcode += ' header="' + header + '"';
+                    }
+                    
+                    if (list !== 'yes') {
+                        shortcode += ' list="' + list + '"';
+                    }
+                    
+                    shortcode += ']';
+                    $('#preview-shortcode-text').text(shortcode);
+                } else {
+                    $('#preview-shortcode-text').text('[google_sheets]');
+                }
+            }
+            
+            // Copiar shortcode al portapapeles
+            $('#copy-shortcode-btn').on('click', function() {
+                var shortcodeText = $('#preview-shortcode-text').text();
+                
+                var $temp = $('<textarea>');
+                $('body').append($temp);
+                $temp.val(shortcodeText).select();
+                document.execCommand('copy');
+                $temp.remove();
+                
+                var $button = $(this);
+                var originalText = $button.text();
+                
+                $button.text('¡Copiado!');
+                setTimeout(function() {
+                    $button.text(originalText);
+                }, 2000);
+            });
+            
+            // Generar previsualización
+            $('#generate-preview-btn').on('click', function() {
+                var $button = $(this);
+                var $spinner = $('#preview-spinner');
+                var $result = $('#preview-result');
+                
+                // Deshabilitar el botón y mostrar spinner
+                $button.prop('disabled', true);
+                $spinner.css('visibility', 'visible');
+                $result.html('<p>' + konecte_modular_admin.generating_preview + '</p>');
+                
+                // Obtener los parámetros del shortcode
+                var type = $('#preview-shortcode-type').val();
+                var data = {
+                    action: 'konecte_preview_shortcode',
+                    nonce: konecte_modular_admin.preview_nonce,
+                    shortcode_type: type
+                };
+                
+                if (type === 'google_sheets_column') {
+                    data.column = $('#preview-column').val();
+                    data.header = $('#preview-header').prop('checked').toString();
+                    data.list = $('#preview-list').prop('checked').toString();
+                }
+                
+                // Realizar la solicitud AJAX
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: data,
+                    success: function(response) {
+                        if (response.success) {
+                            $result.html(response.content);
+                        } else {
+                            $result.html('<div class="konecte-modular-error">' + response.message + '</div>');
+                        }
+                    },
+                    error: function() {
+                        $result.html('<div class="konecte-modular-error">Error de comunicación con el servidor.</div>');
+                    },
+                    complete: function() {
+                        // Habilitar el botón y ocultar spinner
+                        $button.prop('disabled', false);
+                        $spinner.css('visibility', 'hidden');
+                    }
+                });
+            });
+        }
     });
 
 })(jQuery); 

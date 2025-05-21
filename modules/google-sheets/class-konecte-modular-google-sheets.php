@@ -54,6 +54,9 @@ class Konecte_Modular_Google_Sheets {
         
         // Registrar acción AJAX para verificar la conexión
         $this->loader->add_action('wp_ajax_konecte_check_sheets_connection', $this, 'ajax_check_connection');
+        
+        // Registrar acción AJAX para la previsualización de shortcodes
+        $this->loader->add_action('wp_ajax_konecte_preview_shortcode', $this, 'ajax_preview_shortcode');
     }
 
     /**
@@ -429,5 +432,49 @@ class Konecte_Modular_Google_Sheets {
         }
         
         return $data;
+    }
+
+    /**
+     * Maneja la solicitud AJAX para la previsualización de shortcodes.
+     */
+    public function ajax_preview_shortcode() {
+        // Verificar nonce para seguridad
+        check_ajax_referer('konecte_sheets_preview_nonce', 'nonce');
+        
+        $response = array(
+            'success' => false,
+            'content' => '',
+            'message' => ''
+        );
+        
+        // Obtener parámetros
+        $shortcode_type = isset($_POST['shortcode_type']) ? sanitize_text_field($_POST['shortcode_type']) : 'google_sheets';
+        
+        // Configurar el shortcode a ejecutar
+        $shortcode = '';
+        
+        if ($shortcode_type === 'google_sheets') {
+            $shortcode = '[google_sheets]';
+        } elseif ($shortcode_type === 'google_sheets_column') {
+            $column = isset($_POST['column']) ? sanitize_text_field($_POST['column']) : 'A';
+            $header = isset($_POST['header']) && $_POST['header'] === 'true' ? 'yes' : 'no';
+            $list = isset($_POST['list']) && $_POST['list'] === 'true' ? 'yes' : 'no';
+            
+            $shortcode = sprintf('[google_sheets_column column="%s" header="%s" list="%s"]', 
+                $column, $header, $list);
+        }
+        
+        // Ejecutar el shortcode
+        $content = do_shortcode($shortcode);
+        
+        if (empty($content)) {
+            $response['message'] = __('No se pudieron obtener datos para mostrar. Asegúrate de que las configuraciones de Google Sheets sean correctas.', 'konecte-modular');
+        } else {
+            $response['success'] = true;
+            $response['content'] = $content;
+        }
+        
+        wp_send_json($response);
+        wp_die();
     }
 } 

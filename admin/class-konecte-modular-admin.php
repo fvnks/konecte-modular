@@ -47,9 +47,11 @@ class Konecte_Modular_Admin {
         // Pasar variables a JavaScript
         wp_localize_script($this->plugin_name, 'konecte_modular_admin', array(
             'nonce' => wp_create_nonce('konecte_sheets_connection_nonce'),
+            'preview_nonce' => wp_create_nonce('konecte_sheets_preview_nonce'),
             'checking_connection' => __('Verificando conexión...', 'konecte-modular'),
             'connection_success' => __('Conexión exitosa', 'konecte-modular'),
-            'connection_error' => __('Error de conexión', 'konecte-modular')
+            'connection_error' => __('Error de conexión', 'konecte-modular'),
+            'generating_preview' => __('Generando previsualización...', 'konecte-modular')
         ));
     }
 

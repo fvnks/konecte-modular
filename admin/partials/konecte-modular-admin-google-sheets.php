@@ -90,6 +90,50 @@
             <p><code>[google_sheets]</code> - <?php _e('Muestra la hoja completa', 'konecte-modular'); ?></p>
             <p><code>[google_sheets_column column="B"]</code> - <?php _e('Muestra solo la columna B', 'konecte-modular'); ?></p>
         </div>
+        
+        <div class="card">
+            <h2><?php _e('Previsualización', 'konecte-modular'); ?></h2>
+            <p><?php _e('Prueba cómo se verán tus shortcodes antes de utilizarlos en tu sitio.', 'konecte-modular'); ?></p>
+            
+            <div class="konecte-modular-preview-container">
+                <div class="konecte-modular-preview-controls">
+                    <select id="preview-shortcode-type">
+                        <option value="google_sheets"><?php _e('Tabla completa', 'konecte-modular'); ?></option>
+                        <option value="google_sheets_column"><?php _e('Columna específica', 'konecte-modular'); ?></option>
+                    </select>
+                    
+                    <div id="column-options" style="display:none; margin-top:10px;">
+                        <label for="preview-column"><?php _e('Columna:', 'konecte-modular'); ?></label>
+                        <input type="text" id="preview-column" value="A" maxlength="2" size="2" />
+                        
+                        <label for="preview-header" style="margin-left:15px;">
+                            <input type="checkbox" id="preview-header" checked />
+                            <?php _e('Mostrar encabezado', 'konecte-modular'); ?>
+                        </label>
+                        
+                        <label for="preview-list" style="margin-left:15px;">
+                            <input type="checkbox" id="preview-list" checked />
+                            <?php _e('Mostrar como lista', 'konecte-modular'); ?>
+                        </label>
+                    </div>
+                    
+                    <button type="button" id="generate-preview-btn" class="button button-primary" style="margin-top:15px;"><?php _e('Generar previsualización', 'konecte-modular'); ?></button>
+                    <span class="spinner" id="preview-spinner" style="float:none; visibility:hidden; margin-left:10px;"></span>
+                </div>
+                
+                <div class="konecte-modular-preview-shortcode" style="margin-top:15px; padding:10px; background:#f9f9f9; border:1px solid #ddd; border-radius:4px;">
+                    <code id="preview-shortcode-text">[google_sheets]</code>
+                    <button type="button" id="copy-shortcode-btn" class="button button-secondary" style="margin-left:10px;"><?php _e('Copiar', 'konecte-modular'); ?></button>
+                </div>
+                
+                <div class="konecte-modular-preview-result" style="margin-top:20px;">
+                    <h3><?php _e('Resultado:', 'konecte-modular'); ?></h3>
+                    <div id="preview-result" class="konecte-modular-preview-content">
+                        <p><?php _e('Haz clic en "Generar previsualización" para ver el resultado.', 'konecte-modular'); ?></p>
+                    </div>
+                </div>
+            </div>
+        </div>
         <?php
     }
     ?>
