@@ -77,6 +77,7 @@
             $button.prop('disabled', true);
             $spinner.css('visibility', 'visible');
             $message.html('').removeClass('connection-status-success connection-status-error');
+            $message.html(konecte_modular_admin.checking_connection);
             
             // Realizar la solicitud AJAX
             $.ajax({
@@ -87,17 +88,26 @@
                     nonce: konecte_modular_admin.nonce
                 },
                 success: function(response) {
-                    // Mostrar mensaje de resultado
-                    $message.html(response.message);
+                    // Limpiar mensaje anterior
+                    $message.html('');
                     
-                    if (response.status === 'success') {
-                        $message.addClass('connection-status-success');
+                    // Mostrar mensaje de resultado
+                    if (response && typeof response === 'object') {
+                        $message.html(response.message);
+                        
+                        if (response.success === true || response.status === 'success') {
+                            $message.addClass('connection-status-success');
+                        } else {
+                            $message.addClass('connection-status-error');
+                        }
                     } else {
-                        $message.addClass('connection-status-error');
+                        // Fallback para respuestas no válidas
+                        $message.html('Error: Respuesta no válida del servidor').addClass('connection-status-error');
                     }
                 },
-                error: function() {
-                    $message.html('Error de comunicación con el servidor.').addClass('connection-status-error');
+                error: function(xhr, status, error) {
+                    $message.html('Error de comunicación con el servidor: ' + error).addClass('connection-status-error');
+                    console.error('Error AJAX:', xhr, status, error);
                 },
                 complete: function() {
                     // Habilitar el botón y ocultar spinner
