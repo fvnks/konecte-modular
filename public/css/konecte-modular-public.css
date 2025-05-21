@@ -1,0 +1,91 @@
+/**
+ * Estilos de la parte pública del plugin.
+ *
+ * @package    Konecte_Modular
+ */
+ 
+/* Estilos para la tabla de datos */
+.konecte-modular-google-sheets-table {
+    margin: 20px 0;
+    width: 100%;
+    overflow-x: auto;
+}
+
+.konecte-modular-google-sheets-table table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.konecte-modular-google-sheets-table th,
+.konecte-modular-google-sheets-table td {
+    padding: 8px;
+    text-align: left;
+    border: 1px solid #ddd;
+}
+
+.konecte-modular-google-sheets-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+.konecte-modular-google-sheets-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.konecte-modular-google-sheets-table tr:hover {
+    background-color: #f5f5f5;
+}
+
+/* Estilos para columnas de datos */
+.konecte-modular-google-sheets-column {
+    margin: 20px 0;
+}
+
+.konecte-modular-google-sheets-column h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 5px;
+}
+
+.konecte-modular-google-sheets-column ul {
+    margin: 0 0 0 20px;
+    padding: 0;
+    list-style-type: disc;
+}
+
+.konecte-modular-google-sheets-column li {
+    margin-bottom: 5px;
+}
+
+.konecte-modular-google-sheets-column p {
+    margin: 0 0 10px 0;
+}
+
+/* Estilos para mensajes de error */
+.konecte-modular-google-sheets-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-left: 4px solid #721c24;
+    margin: 10px 0;
+}
+
+/* Estilos responsivos */
+@media screen and (max-width: 600px) {
+    .konecte-modular-google-sheets-table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+    }
+    
+    .konecte-modular-google-sheets-table th,
+    .konecte-modular-google-sheets-table td {
+        padding: 6px;
+        font-size: 0.9em;
+    }
+} 
