@@ -17,33 +17,34 @@
             
             <div class="welcome-panel-column-container">
                 <div class="welcome-panel-column">
-                    <h3><?php _e('Iniciar', 'konecte-modular'); ?></h3>
+                    <h3><span class="dashicons dashicons-admin-tools"></span> <?php _e('Iniciar', 'konecte-modular'); ?></h3>
                     <ul>
-                        <li><?php _e('1. Configura la conexión a Google Sheets', 'konecte-modular'); ?></li>
-                        <li><?php _e('2. Utiliza los shortcodes en tus páginas', 'konecte-modular'); ?></li>
-                        <li><?php _e('3. Personaliza según tus necesidades', 'konecte-modular'); ?></li>
+                        <li><?php _e('Configura la conexión a Google Sheets', 'konecte-modular'); ?></li>
+                        <li><?php _e('Utiliza los shortcodes en tus páginas', 'konecte-modular'); ?></li>
+                        <li><?php _e('Personaliza según tus necesidades', 'konecte-modular'); ?></li>
                     </ul>
+                    <a href="<?php echo admin_url('admin.php?page=konecte-modular-google-sheets'); ?>" class="button button-primary"><?php _e('Configurar Google Sheets', 'konecte-modular'); ?></a>
                 </div>
                 
                 <div class="welcome-panel-column">
-                    <h3><?php _e('Shortcodes Disponibles', 'konecte-modular'); ?></h3>
-                    <ul>
-                        <li><code>[google_sheets id="ID_HOJA" range="A1:Z1000" sheet="0"]</code></li>
-                        <li><code>[google_sheets_column id="ID_HOJA" range="A1:Z1000" sheet="0" column="A"]</code></li>
-                    </ul>
+                    <h3><span class="dashicons dashicons-shortcode"></span> <?php _e('Shortcodes Disponibles', 'konecte-modular'); ?></h3>
+                    <p><?php _e('Copia estos shortcodes en tus páginas o posts:', 'konecte-modular'); ?></p>
+                    <code>[google_sheets id="ID_HOJA" range="A1:Z1000" sheet="0"]</code>
+                    <code>[google_sheets_column id="ID_HOJA" range="A1:Z1000" sheet="0" column="A"]</code>
                 </div>
                 
                 <div class="welcome-panel-column welcome-panel-last">
-                    <h3><?php _e('Actualizaciones', 'konecte-modular'); ?></h3>
+                    <h3><span class="dashicons dashicons-update"></span> <?php _e('Actualizaciones', 'konecte-modular'); ?></h3>
                     <p><?php _e('Este plugin se actualiza automáticamente desde GitHub.', 'konecte-modular'); ?></p>
-                    <p><a href="<?php echo admin_url('admin.php?page=konecte-modular-settings'); ?>" class="button button-primary"><?php _e('Configurar Actualizaciones', 'konecte-modular'); ?></a></p>
+                    <p><?php _e('Versión actual:', 'konecte-modular'); ?> <strong><?php echo KONECTE_MODULAR_VERSION; ?></strong></p>
+                    <a href="<?php echo admin_url('admin.php?page=konecte-modular-settings'); ?>" class="button button-primary"><?php _e('Configurar Actualizaciones', 'konecte-modular'); ?></a>
                 </div>
             </div>
         </div>
     </div>
     
     <div class="card">
-        <h2><?php _e('Documentación Rápida', 'konecte-modular'); ?></h2>
+        <h2><span class="dashicons dashicons-book"></span> <?php _e('Documentación Rápida', 'konecte-modular'); ?></h2>
         
         <h3><?php _e('Shortcode [google_sheets]', 'konecte-modular'); ?></h3>
         <p><?php _e('Este shortcode muestra una tabla completa con los datos de tu hoja de Google.', 'konecte-modular'); ?></p>
@@ -64,6 +65,16 @@
             <li><code>column</code>: <?php _e('La letra de la columna a mostrar (A, B, C, etc.). Por defecto A.', 'konecte-modular'); ?></li>
             <li><code>header</code>: <?php _e('Si se debe mostrar la cabecera (yes/no). Por defecto yes.', 'konecte-modular'); ?></li>
             <li><code>list</code>: <?php _e('Si se debe mostrar como lista (yes/no). Por defecto yes.', 'konecte-modular'); ?></li>
+        </ul>
+    </div>
+    
+    <div class="card">
+        <h2><span class="dashicons dashicons-editor-help"></span> <?php _e('¿Necesitas ayuda?', 'konecte-modular'); ?></h2>
+        <p><?php _e('Si tienes preguntas o necesitas soporte, puedes:', 'konecte-modular'); ?></p>
+        <ul>
+            <li><?php _e('Visitar el', 'konecte-modular'); ?> <a href="https://github.com/fvnks/konecte-modular" target="_blank"><?php _e('repositorio en GitHub', 'konecte-modular'); ?></a></li>
+            <li><?php _e('Revisar la documentación completa en línea', 'konecte-modular'); ?></li>
+            <li><?php _e('Abrir un issue en GitHub para reportar problemas', 'konecte-modular'); ?></li>
         </ul>
     </div>
 </div> 
