@@ -61,14 +61,17 @@ class Konecte_Modular_Updater {
         // Manejador para simular actualización (solo en modo desarrollo)
         add_action('admin_init', array($this, 'handle_simulate_update'));
         
-        // Programar la comprobación automática de actualizaciones
+        // Programar la comprobación automática de actualizaciones - reduciendo a cada 6 horas
         if (!wp_next_scheduled('konecte_check_updates')) {
-            wp_schedule_event(time(), 'daily', 'konecte_check_updates');
+            wp_schedule_event(time(), 'twicedaily', 'konecte_check_updates');
         }
         add_action('konecte_check_updates', array($this, 'scheduled_update_check'));
         
         // Endpoint AJAX para verificación de actualizaciones
         add_action('wp_ajax_konecte_force_update_check', array($this, 'ajax_force_update_check'));
+
+        // Hook para limpiar caché al activar el plugin
+        add_action('activated_plugin', array($this, 'clear_update_cache'));
     }
 
     /**
@@ -227,10 +230,10 @@ class Konecte_Modular_Updater {
             return $transient;
         }
         
-        // Ignorar llamadas cuando transient->checked está vacío (podría ser una solicitud para obtener la lista de plugins)
+        // Si no hay checked, inicializarlo como array vacío
         if (!isset($transient->checked)) {
-            error_log('Konecte Modular: transient->checked no está definido');
-            return $transient;
+            error_log('Konecte Modular: transient->checked no está definido, inicializando como array vacío');
+            $transient->checked = array();
         }
         
         $plugin_path = KONECTE_MODULAR_PLUGIN_BASENAME;
@@ -239,13 +242,15 @@ class Konecte_Modular_Updater {
         
         error_log('Konecte Modular: Verificando actualizaciones para la versión ' . $current_version);
         
-        // Determinar si debemos comprobar actualizaciones
+        // Determinar si debemos comprobar actualizaciones - reducir a 4 horas para más frecuencia
         $last_check = get_option('konecte_modular_last_update_check');
-        $check_interval = 12 * HOUR_IN_SECONDS; // 12 horas
+        $check_interval = 4 * HOUR_IN_SECONDS; // 4 horas
         $force_check = isset($_GET['konecte-force-check']) || isset($_GET['force-check']);
         
         if ($force_check) {
             error_log('Konecte Modular: Forzando verificación de actualizaciones');
+            // Limpiar caché explícitamente
+            $this->clear_update_cache();
         }
         
         if (!$force_check && $last_check && (time() - $last_check < $check_interval)) {
@@ -257,8 +262,8 @@ class Konecte_Modular_Updater {
         update_option('konecte_modular_last_update_check', time());
         error_log('Konecte Modular: Actualizando última comprobación a ' . date('Y-m-d H:i:s', time()));
         
-        // Obtener la información de la versión más reciente
-        $remote_version = $this->get_remote_version();
+        // Obtener la información de la versión más reciente - añadir un parámetro aleatorio para evitar caché
+        $remote_version = $this->get_remote_version(true);
         
         if (!$remote_version) {
             error_log('Konecte Modular: No se pudo obtener la versión remota');
@@ -273,8 +278,11 @@ class Konecte_Modular_Updater {
         
         error_log('Konecte Modular: Versión remota: ' . $remote_version->tag_name . ', Versión actual: ' . $current_version);
         
-        // Comprobar si hay una nueva versión disponible
-        if (version_compare($remote_version->tag_name, $current_version, '>')) {
+        // Comprobar si hay una nueva versión disponible - mostrar información detallada en el log
+        $comparison_result = version_compare($remote_version->tag_name, $current_version, '>');
+        error_log('Konecte Modular: Resultado de comparación de versiones: ' . ($comparison_result ? 'Nueva versión disponible' : 'Versión actual'));
+        
+        if ($comparison_result) {
             error_log('Konecte Modular: Nueva versión disponible: ' . $remote_version->tag_name);
             
             $options = get_option('konecte_modular_updater_settings');
@@ -557,9 +565,16 @@ class Konecte_Modular_Updater {
     /**
      * Obtiene la información de la última versión desde GitHub.
      *
+     * @param bool $force_refresh Si es true, fuerza la actualización del caché.
      * @return object|false Datos de la última versión o false en caso de error.
      */
-    private function get_remote_version() {
+    private function get_remote_version($force_refresh = false) {
+        // Si se fuerza la actualización, limpiar caché
+        if ($force_refresh) {
+            delete_option('konecte_modular_last_update_check');
+            delete_site_transient('update_plugins');
+        }
+        
         // Verificar si hay una actualización simulada
         if (defined('WP_DEBUG') && WP_DEBUG) {
             $simulated_update = $this->get_simulated_update();
@@ -576,9 +591,22 @@ class Konecte_Modular_Updater {
 
         error_log('Konecte Modular: Buscando versión remota para usuario: ' . $username . ', repo: ' . $repo);
 
-        // Construir la URL de la API
-        $url = "https://api.github.com/repos/{$username}/{$repo}/releases/latest";
-        error_log('Konecte Modular: URL de la API: ' . $url);
+        // Primero, intentar obtener tags (más confiable que releases)
+        error_log('Konecte Modular: Intentando obtener tags primero');
+        $tags_result = $this->get_remote_version_from_tags($username, $repo, $access_token);
+        
+        if ($tags_result) {
+            error_log('Konecte Modular: Se encontraron tags, usando el más reciente');
+            return $tags_result;
+        }
+        
+        // Si no hay tags, intentar con releases
+        error_log('Konecte Modular: No se encontraron tags, intentando con releases');
+        
+        // Construir la URL de la API con parámetro para evitar caché
+        $cache_buster = time();
+        $url = "https://api.github.com/repos/{$username}/{$repo}/releases/latest?_={$cache_buster}";
+        error_log('Konecte Modular: URL de la API para releases: ' . $url);
         
         // Configurar los argumentos de la solicitud
         $args = array(
@@ -586,6 +614,8 @@ class Konecte_Modular_Updater {
             'headers' => array(
                 'Accept' => 'application/vnd.github.v3+json',
                 'User-Agent' => 'WordPress/' . get_bloginfo('version') . '; ' . get_bloginfo('url'),
+                'Cache-Control' => 'no-cache, no-store',
+                'Pragma' => 'no-cache'
             ),
         );
         
@@ -598,7 +628,7 @@ class Konecte_Modular_Updater {
         }
         
         // Realizar la solicitud a la API
-        error_log('Konecte Modular: Realizando solicitud a la API');
+        error_log('Konecte Modular: Realizando solicitud a la API de releases');
         $response = wp_remote_get($url, $args);
         
         // Verificar si hay errores en la respuesta
@@ -609,51 +639,49 @@ class Konecte_Modular_Updater {
         
         // Obtener el código de respuesta
         $response_code = wp_remote_retrieve_response_code($response);
-        error_log('Konecte Modular: Código de respuesta HTTP: ' . $response_code);
+        error_log('Konecte Modular: Código de respuesta HTTP para releases: ' . $response_code);
         
-        // Si el código es 404, podría ser que no haya releases, intentamos obtener tags
+        // Si el código es 404, podría ser que no haya releases, ya intentamos obtener tags
         if ($response_code === 404) {
-            error_log('Konecte Modular: No se encontraron releases, intentando obtener tags');
-            $tags_result = $this->get_remote_version_from_tags($username, $repo, $access_token);
+            error_log('Konecte Modular: No se encontraron releases ni tags');
             
-            // Si hay tags, devolver el resultado
-            if ($tags_result) {
-                return $tags_result;
+            // Si estamos en modo debug, crear una versión simulada
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Konecte Modular: Creando versión simulada para pruebas en modo debug');
+                
+                // Obtener la versión actual y aumentarla para simular una actualización
+                $plugin_data = get_plugin_data(WP_PLUGIN_DIR . '/' . KONECTE_MODULAR_PLUGIN_BASENAME);
+                $current_version = $plugin_data['Version'];
+                $version_parts = explode('.', $current_version);
+                
+                // Incrementar la versión menor
+                if (count($version_parts) >= 3) {
+                    $version_parts[2] = intval($version_parts[2]) + 1;
+                } elseif (count($version_parts) == 2) {
+                    $version_parts[] = '1';
+                }
+                
+                $simulated_version = implode('.', $version_parts);
+                error_log('Konecte Modular: Versión actual: ' . $current_version . ', Versión simulada: ' . $simulated_version);
+                
+                // Crear un objeto simulado con la información necesaria
+                $simulated_obj = new stdClass();
+                $simulated_obj->tag_name = $simulated_version;
+                $simulated_obj->name = 'Versión simulada ' . $simulated_version;
+                $simulated_obj->body = 'Esta es una versión simulada creada para pruebas.';
+                $simulated_obj->zipball_url = '';
+                $simulated_obj->published_at = date('Y-m-d H:i:s');
+                
+                // Si la versión actual es de desarrollo, no mostrar actualización
+                if (strpos($current_version, 'dev') !== false) {
+                    error_log('Konecte Modular: Versión actual de desarrollo, no se simula actualización');
+                    return false;
+                }
+                
+                return $simulated_obj;
             }
             
-            // Si tampoco hay tags, crear una versión simulada para pruebas
-            error_log('Konecte Modular: No se encontraron tags, creando versión simulada para pruebas');
-            
-            // Obtener la versión actual y aumentarla para simular una actualización
-            $plugin_data = get_plugin_data(WP_PLUGIN_DIR . '/' . KONECTE_MODULAR_PLUGIN_BASENAME);
-            $current_version = $plugin_data['Version'];
-            $version_parts = explode('.', $current_version);
-            
-            // Incrementar la versión menor
-            if (count($version_parts) >= 3) {
-                $version_parts[2] = intval($version_parts[2]) + 1;
-            } elseif (count($version_parts) == 2) {
-                $version_parts[] = '1';
-            }
-            
-            $simulated_version = implode('.', $version_parts);
-            error_log('Konecte Modular: Versión actual: ' . $current_version . ', Versión simulada: ' . $simulated_version);
-            
-            // Crear un objeto simulado con la información necesaria
-            $simulated_obj = new stdClass();
-            $simulated_obj->tag_name = $simulated_version;
-            $simulated_obj->name = 'Versión simulada ' . $simulated_version;
-            $simulated_obj->body = 'Esta es una versión simulada creada para pruebas.';
-            $simulated_obj->zipball_url = '';
-            $simulated_obj->published_at = date('Y-m-d H:i:s');
-            
-            // Si la versión actual es de desarrollo, no mostrar actualización
-            if (strpos($current_version, 'dev') !== false) {
-                error_log('Konecte Modular: Versión actual de desarrollo, no se simula actualización');
-                return false;
-            }
-            
-            return $simulated_obj;
+            return false;
         }
         
         // Verificar que el código de respuesta es 200 OK
@@ -665,6 +693,8 @@ class Konecte_Modular_Updater {
         
         // Decodificar la respuesta JSON
         $body = wp_remote_retrieve_body($response);
+        error_log('Konecte Modular: Respuesta de GitHub (releases): ' . $body);
+        
         $data = json_decode($body);
         
         // Verificar que la respuesta es válida
@@ -674,7 +704,7 @@ class Konecte_Modular_Updater {
             return false;
         }
         
-        error_log('Konecte Modular: Versión remota encontrada: ' . $data->tag_name);
+        error_log('Konecte Modular: Versión remota encontrada en releases: ' . $data->tag_name);
         return $data;
     }
     
@@ -687,8 +717,9 @@ class Konecte_Modular_Updater {
      * @return object|false Datos de la última versión o false en caso de error.
      */
     private function get_remote_version_from_tags($username, $repo, $access_token = '') {
-        // Construir la URL de la API
-        $url = "https://api.github.com/repos/{$username}/{$repo}/tags";
+        // Construir la URL de la API con un parámetro que evite caché
+        $cache_buster = time();
+        $url = "https://api.github.com/repos/{$username}/{$repo}/tags?_={$cache_buster}";
         error_log('Konecte Modular: Buscando tags en: ' . $url);
         
         // Configurar los argumentos de la solicitud
@@ -697,6 +728,8 @@ class Konecte_Modular_Updater {
             'headers' => array(
                 'Accept' => 'application/vnd.github.v3+json',
                 'User-Agent' => 'WordPress/' . get_bloginfo('version') . '; ' . get_bloginfo('url'),
+                'Cache-Control' => 'no-cache, no-store',
+                'Pragma' => 'no-cache'
             ),
         );
         
@@ -728,7 +761,10 @@ class Konecte_Modular_Updater {
         }
         
         // Decodificar la respuesta JSON
-        $tags = json_decode(wp_remote_retrieve_body($response));
+        $body = wp_remote_retrieve_body($response);
+        error_log('Konecte Modular: Respuesta cruda de GitHub para tags: ' . $body);
+        
+        $tags = json_decode($body);
         
         // Verificar que la respuesta sea válida
         if (!is_array($tags) || empty($tags)) {
@@ -738,9 +774,22 @@ class Konecte_Modular_Updater {
         
         error_log('Konecte Modular: Se encontraron ' . count($tags) . ' tags');
         
+        // Mostrar todos los tags encontrados
+        foreach ($tags as $tag) {
+            error_log('Konecte Modular: Tag encontrado: ' . $tag->name);
+            
+            // Eliminar el 'v' inicial si existe para facilitar la comparación con version_compare
+            $clean_name = (substr($tag->name, 0, 1) === 'v') ? substr($tag->name, 1) : $tag->name;
+            $tag->clean_name = $clean_name;
+        }
+        
         // Ordenar las etiquetas por nombre de versión (asumiendo que siguen formato semver)
         usort($tags, function($a, $b) {
-            return version_compare($b->name, $a->name);
+            return version_compare(
+                isset($a->clean_name) ? $a->clean_name : $a->name, 
+                isset($b->clean_name) ? $b->clean_name : $b->name, 
+                '<'  // Orden descendente
+            );
         });
         
         $latest_tag = $tags[0];
@@ -999,5 +1048,16 @@ class Konecte_Modular_Updater {
         
         error_log('Konecte Modular: Se encontró una actualización simulada: ' . $simulated_update->tag_name);
         return $simulated_update;
+    }
+
+    /**
+     * Limpia las cachés de actualización
+     */
+    public function clear_update_cache($plugin = '') {
+        if (empty($plugin) || $plugin === KONECTE_MODULAR_PLUGIN_BASENAME) {
+            delete_option('konecte_modular_last_update_check');
+            delete_site_transient('update_plugins');
+            error_log('Konecte Modular: Cache de actualizaciones limpiado');
+        }
     }
 } 
