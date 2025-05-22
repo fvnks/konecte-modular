@@ -93,10 +93,14 @@
                     nonce: konecte_modular_admin.sheets_nonce
                 },
                 success: function(response) {
-                    if (response.success) {
+                    if (response.success && response.data && response.data.message) {
                         $('#connection-status-message').html(response.data.message).removeClass('notice-info notice-error').addClass('notice-success');
                     } else {
-                        $('#connection-status-message').html(response.data.message).removeClass('notice-info notice-success').addClass('notice-error');
+                        // Usar un mensaje genérico si no hay response.data o response.data.message
+                        const errorMsg = (response.data && response.data.message) 
+                            ? response.data.message 
+                            : konecte_modular_admin.connection_error;
+                        $('#connection-status-message').html(errorMsg).removeClass('notice-info notice-success').addClass('notice-error');
                     }
                 },
                 error: function() {
@@ -245,10 +249,13 @@
                     type: 'POST',
                     data: data,
                     success: function(response) {
-                        if (response.success) {
+                        if (response && response.success && response.content) {
                             $result.html(response.content);
                         } else {
-                            $result.html('<div class="konecte-modular-error">' + response.message + '</div>');
+                            const errorMsg = (response && response.message) 
+                                ? response.message 
+                                : 'Error al generar la previsualización.';
+                            $result.html('<div class="konecte-modular-error">' + errorMsg + '</div>');
                         }
                     },
                     error: function() {
