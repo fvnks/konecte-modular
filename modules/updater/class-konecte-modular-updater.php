@@ -616,44 +616,44 @@ class Konecte_Modular_Updater {
             error_log('Konecte Modular: No se encontraron releases, intentando obtener tags');
             $tags_result = $this->get_remote_version_from_tags($username, $repo, $access_token);
             
-            // Si tampoco hay tags, crear una versión simulada para pruebas
-            if (!$tags_result) {
-                error_log('Konecte Modular: No se encontraron tags, creando versión simulada para pruebas');
-                
-                // Obtener la versión actual y aumentarla para simular una actualización
-                $plugin_data = get_plugin_data(WP_PLUGIN_DIR . '/' . KONECTE_MODULAR_PLUGIN_BASENAME);
-                $current_version = $plugin_data['Version'];
-                $version_parts = explode('.', $current_version);
-                
-                // Incrementar la versión menor
-                if (count($version_parts) >= 3) {
-                    $version_parts[2] = intval($version_parts[2]) + 1;
-                } elseif (count($version_parts) == 2) {
-                    $version_parts[] = '1';
-                }
-                
-                $simulated_version = implode('.', $version_parts);
-                error_log('Konecte Modular: Versión actual: ' . $current_version . ', Versión simulada: ' . $simulated_version);
-                
-                // Crear un objeto simulado con la información necesaria
-                $simulated_obj = new stdClass();
-                $simulated_obj->tag_name = $simulated_version;
-                $simulated_obj->name = 'Versión simulada ' . $simulated_version;
-                $simulated_obj->body = 'Esta es una versión simulada creada para pruebas.';
-                $simulated_obj->zipball_url = '';
-                $simulated_obj->published_at = date('Y-m-d H:i:s');
-                
-                // Si la versión actual es de desarrollo, no mostrar actualización
-                if (strpos($current_version, 'dev') !== false) {
-                    error_log('Konecte Modular: Versión actual de desarrollo, no se simula actualización');
-                    return false;
-                }
-                
-                error_log('Konecte Modular: Devolviendo versión simulada: ' . $simulated_version);
-                return $simulated_obj;
+            // Si hay tags, devolver el resultado
+            if ($tags_result) {
+                return $tags_result;
             }
             
-            return $tags_result;
+            // Si tampoco hay tags, crear una versión simulada para pruebas
+            error_log('Konecte Modular: No se encontraron tags, creando versión simulada para pruebas');
+            
+            // Obtener la versión actual y aumentarla para simular una actualización
+            $plugin_data = get_plugin_data(WP_PLUGIN_DIR . '/' . KONECTE_MODULAR_PLUGIN_BASENAME);
+            $current_version = $plugin_data['Version'];
+            $version_parts = explode('.', $current_version);
+            
+            // Incrementar la versión menor
+            if (count($version_parts) >= 3) {
+                $version_parts[2] = intval($version_parts[2]) + 1;
+            } elseif (count($version_parts) == 2) {
+                $version_parts[] = '1';
+            }
+            
+            $simulated_version = implode('.', $version_parts);
+            error_log('Konecte Modular: Versión actual: ' . $current_version . ', Versión simulada: ' . $simulated_version);
+            
+            // Crear un objeto simulado con la información necesaria
+            $simulated_obj = new stdClass();
+            $simulated_obj->tag_name = $simulated_version;
+            $simulated_obj->name = 'Versión simulada ' . $simulated_version;
+            $simulated_obj->body = 'Esta es una versión simulada creada para pruebas.';
+            $simulated_obj->zipball_url = '';
+            $simulated_obj->published_at = date('Y-m-d H:i:s');
+            
+            // Si la versión actual es de desarrollo, no mostrar actualización
+            if (strpos($current_version, 'dev') !== false) {
+                error_log('Konecte Modular: Versión actual de desarrollo, no se simula actualización');
+                return false;
+            }
+            
+            return $simulated_obj;
         }
         
         // Verificar que el código de respuesta es 200 OK
@@ -709,12 +709,11 @@ class Konecte_Modular_Updater {
         }
         
         // Realizar la solicitud a la API
-        error_log('Konecte Modular: Realizando solicitud para obtener tags');
         $response = wp_remote_get($url, $args);
         
         // Verificar si hay errores en la respuesta
         if (is_wp_error($response)) {
-            error_log('Konecte Modular: Error al comprobar tags - ' . $response->get_error_message());
+            error_log('Konecte Modular: Error al obtener tags - ' . $response->get_error_message());
             return false;
         }
         
@@ -722,41 +721,38 @@ class Konecte_Modular_Updater {
         $response_code = wp_remote_retrieve_response_code($response);
         error_log('Konecte Modular: Código de respuesta HTTP para tags: ' . $response_code);
         
+        // Si la respuesta no es 200, hay un error
         if ($response_code !== 200) {
-            error_log('Konecte Modular: Error al comprobar tags - Código HTTP: ' . $response_code);
-            error_log('Konecte Modular: Cuerpo de la respuesta: ' . wp_remote_retrieve_body($response));
+            error_log('Konecte Modular: Error HTTP al obtener tags: ' . $response_code);
             return false;
         }
         
         // Decodificar la respuesta JSON
-        $body = wp_remote_retrieve_body($response);
-        $tags = json_decode($body);
+        $tags = json_decode(wp_remote_retrieve_body($response));
         
-        if (empty($tags) || !is_array($tags)) {
-            error_log('Konecte Modular: Error al comprobar tags - Respuesta inválida o sin tags');
-            error_log('Konecte Modular: Cuerpo de la respuesta: ' . $body);
+        // Verificar que la respuesta sea válida
+        if (!is_array($tags) || empty($tags)) {
+            error_log('Konecte Modular: No se encontraron tags o la respuesta es inválida');
             return false;
         }
         
         error_log('Konecte Modular: Se encontraron ' . count($tags) . ' tags');
         
-        // Ordenar los tags por la propiedad 'name' (versión)
+        // Ordenar las etiquetas por nombre de versión (asumiendo que siguen formato semver)
         usort($tags, function($a, $b) {
             return version_compare($b->name, $a->name);
         });
         
-        // Obtener el tag más reciente
         $latest_tag = $tags[0];
         error_log('Konecte Modular: Tag más reciente: ' . $latest_tag->name);
         
-        // Convertir el tag en un objeto con el formato esperado
+        // Crear un objeto estructurado como un release
         $release = new stdClass();
         $release->tag_name = $latest_tag->name;
         $release->name = $latest_tag->name;
         $release->zipball_url = $latest_tag->zipball_url;
         $release->tarball_url = $latest_tag->tarball_url;
-        $release->body = 'Actualización basada en el tag ' . $latest_tag->name;
-        $release->published_at = date('Y-m-d H:i:s');
+        $release->body = __('Versión obtenida de tags de GitHub', 'konecte-modular');
         
         return $release;
     }
@@ -880,8 +876,12 @@ class Konecte_Modular_Updater {
         
         if (!$remote_version) {
             wp_send_json_error(array(
-                'message' => __('No se pudo obtener información del repositorio de GitHub. Verifica tu configuración.', 'konecte-modular')
+                'message' => __('No se pudo obtener información del repositorio de GitHub. Verifica tu configuración.', 'konecte-modular'),
+                'current_version' => $current_version,
+                'remote_version' => __('No disponible', 'konecte-modular'),
+                'has_update' => false
             ));
+            return;
         }
         
         // Comparar versiones
@@ -903,7 +903,7 @@ class Konecte_Modular_Updater {
                     $current_version
                 ),
                 'current_version' => $current_version,
-                'remote_version' => $remote_version->tag_name,
+                'remote_version' => isset($remote_version->tag_name) ? $remote_version->tag_name : __('No disponible', 'konecte-modular'),
                 'has_update' => false
             ));
         }

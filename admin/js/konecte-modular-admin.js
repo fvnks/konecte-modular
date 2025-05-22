@@ -128,10 +128,14 @@
                     nonce: konecte_modular_admin.nonce
                 },
                 success: function(response) {
-                    if (response.success) {
+                    if (response.success && response.data && response.data.message) {
                         $('#update-status-message').html(response.data.message).removeClass('notice-info notice-error').addClass('notice-success');
                     } else {
-                        $('#update-status-message').html(response.data.message).removeClass('notice-info notice-success').addClass('notice-error');
+                        // Usar un mensaje genérico si no hay response.data o response.data.message
+                        const errorMsg = (response.data && response.data.message) 
+                            ? response.data.message 
+                            : konecte_modular_admin.update_error_message;
+                        $('#update-status-message').html(errorMsg).removeClass('notice-info notice-success').addClass('notice-error');
                     }
                 },
                 error: function() {
